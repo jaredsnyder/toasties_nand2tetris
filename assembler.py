@@ -26,7 +26,9 @@ def command_type(command):
 # JLE     1 1 0   if comp ≤ 0 jump
 # JMP     1 1 1   Unconditional jump
 def get_jump_bits(command):
-    if 'JGT' in command:
+    if command is None:
+        return "000"
+    elif 'JGT' in command:
         return "001"
     elif "JEQ" in command:
         return "010"
@@ -98,7 +100,64 @@ def get_dest_bits(command):
 # D&A     D&M     0 0 0 0 0 0
 # D|A     D|M     0 1 0 1 0 1
 def get_comp_bits(command):
-    pass
+    ## returns a string of "a c1 c2 c3 c4 c5 c6"
+    match command:
+        case "0":
+            return "0101010"
+        case "1":
+            return "0111111"
+        case "-1":
+            return "0111010"
+        case "D":
+            return "0001100"
+        case "A":
+            return "0110000"
+        case "M":
+            return "1110000"
+        case "!D":
+            return "0001101"
+        case "!A":
+            return "0110001"
+        case "!M":
+            return "1110001"
+        case "-D":
+            return "0001111"
+        case "-A":
+            return "0110011"
+        case "-M":
+            return "1110011"
+        case "D+1":
+            return "0011111"
+        case "A+1":
+            return "0110111"        
+        case "M+1":
+            return "1110111"
+        case "D-1":
+            return "0110111"
+        case "A-1":
+            return "0110010"
+        case "M-1":
+            return "1110010"
+        case "D+A":
+            return "0000010"
+        case "D+M":
+            return "1000010"
+        case "D-A":
+            return "0010011"
+        case "D-M":
+            return "1010011"
+        case "A-D":
+            return "0000111"
+        case "M-D":
+            return "1000111"
+        case "D&A":
+            return "0000000"
+        case "D&M":
+            return "1000000"
+        case "D|A":
+            return "0010101"
+        case "D|M":
+            return "1010101"
 
 
 def convert_to_binary(value):
@@ -118,12 +177,12 @@ def parse_c_instruction(command):
     # JGE
     # D = D+1
     # A ; JLE
-    comp, dest, jump = None
-    if (command.contains("=")):
+    comp, dest, jump = None, None, None
+    if ("=" in command):
         # there will be a dest and comp
         # there may or may not be a jump
         dest, the_rest = command.split("=")
-        if (the_rest.contains(";")):
+        if (";" in the_rest):
             comp, jump = the_rest.split(";")
         else:
             comp = the_rest
@@ -132,8 +191,12 @@ def parse_c_instruction(command):
         # there will not be any dest or comp
         # there will be a jump
         dest = None
-        if (command.contains(";")):
+        if (";" in command):
             comp, jump = command.split(";")
+    print(f"comp: {comp}")
+    print(f"jump: {jump}")
+    print(f"dest: {dest}")
+    
     jump_bits = get_jump_bits(jump)
     dest_bits = get_dest_bits(dest)
     comp_bits = get_comp_bits(comp)
@@ -153,9 +216,10 @@ def parser(command):
     if command_type_value == A_INSTRUCTION:
         cleaner_command = clean_command[1:]
         return convert_to_binary(cleaner_command)
+    
     elif command_type_value == C_INSTRUCTION:
         comp, dest, jump = parse_c_instruction(clean_command)
-        return f"1{comp}{dest}{jump}"
+        return f"111{comp}{dest}{jump}"
 
 
 if __name__ == "__main__":
