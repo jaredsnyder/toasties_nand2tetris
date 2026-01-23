@@ -1,5 +1,5 @@
-INPUT_FILENAME = "add.asm"
-OUTPUT_FILENAME = "add.hack"
+INPUT_FILENAME = "max.asm"
+OUTPUT_FILENAME = "max.hack"
 
 A_INSTRUCTION = "A_INSTRUCTION"
 C_INSTRUCTION = "C_INSTRUCTION"
@@ -30,13 +30,10 @@ FULL_SYMBOLS_LUT = {
     "KBD": 24576,
 }
 
-USER_DEFINED_SYMBOLS = {}
-
-
 def command_type(command):
     if "@" in command[0]:
         return A_INSTRUCTION
-    elif "=" in command:
+    elif "=" in command or ";" in command:
         return C_INSTRUCTION
     elif "(" in command and ")" in command:
         return L_INSTRUCTION
@@ -86,6 +83,8 @@ def get_jump_bits(command):
 # AD      1 1 0   A register and D register
 # ADM     1 1 1   A register, D register, and RAM[A]
 def get_dest_bits(command):
+    if not command:
+        return "000"
     destination_substring = command.split("=")[0]
     if destination_substring == "M":
         return "001"
@@ -236,9 +235,13 @@ def parse_c_instruction(command):
     return comp_bits, dest_bits, jump_bits
 
 
-def symbol_parser(line):
-    pass
-
+def symbol_parser(line, i):
+    stripped_line = line.strip()
+    if stripped_line[0] == "(" and stripped_line[-1]==")":
+        if stripped_line[1:-1] in FULL_SYMBOLS_LUT:
+            raise ValueError("NO! NOO!!!!")
+        FULL_SYMBOLS_LUT[stripped_line[1:-1]]=i
+        print(stripped_line[1:-1],i, convert_to_binary(i))
 
 def command_parser(command):
     # TODO make sure it handles whitespace properly
@@ -252,17 +255,22 @@ def command_parser(command):
     print(f"command_type_value: {command_type_value}")
     if command_type_value == A_INSTRUCTION:
         cleaner_command = clean_command[1:]
+        if cleaner_command in FULL_SYMBOLS_LUT:
+            return convert_to_binary(FULL_SYMBOLS_LUT[cleaner_command])
         return convert_to_binary(cleaner_command)
 
     elif command_type_value == C_INSTRUCTION:
         comp, dest, jump = parse_c_instruction(clean_command)
         return f"111{comp}{dest}{jump}"
+    
+    elif command_type_value == L_INSTRUCTION:
+        return
 
 
 def is_skipped_line(line) -> bool:
     if not line.strip():
         return True
-    if line[0:2] == "//":
+    if line.strip()[0:2] == "//":
         return True
     return False
 
@@ -271,10 +279,10 @@ if __name__ == "__main__":
     output = []
 
     # Pass for user defined symbols
-    for line in open(INPUT_FILENAME).readlines():
+    for i, line in enumerate(open(INPUT_FILENAME).readlines()):
         if is_skipped_line(line):
             continue
-        pass
+        symbol_parser(line, i)
 
     # Pass for command identification
     for line in open(INPUT_FILENAME).readlines():
