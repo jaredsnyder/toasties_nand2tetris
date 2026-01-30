@@ -8,14 +8,20 @@
 # Slide 70 - arithmetic operations
 # Slide 83 - segments and stack in the ram
 
-# Our VM is stack-based.
-# Every high-level arithmetic or logical expression in the object oriented Jack language can be translated into
-# a sequence of VM commands, operating in a stack (stack arithmetic, stack logical ops).
+# Our VM is a "stack machine" architecture.
+# It just uses a stack and some memory.
 #
-# The first goal is to the support the push / pop commands of the VM language:
+# Every high-level arithmetic or logical or branching expression in the high level Jack language
+# can be translated into a sequence of VM commands that leverage the stack and the memory.
+# So we'll store values in memory, and place them onto the stack for the "working memory" when we
+# want to do arithmetic or logic or branch operations.
+#
+# The first goal is to the support the push / pop commands of the VM language.
+# Push / pop commands transfer data between the stack and memory segments.
+#
 # push/pop {segment} {i}
-# {segment} is one of the 8 areas of virtual memory that we only ever access LIFO. Segments are stacks as well.
-# {i} is the value we want to put into the virtual memory
+# {segment} is one of the 8 areas of virtual memory in our VM. The segment is sequential, RAM-like memory.
+# {i} is the index into a specific location of the virtual memory
 #
 # There are 8 kinds of memory segments: constant, local, argument, this, that, static, temp, pointer
 # The reason for having this particular 8 is to support specific functionalities of the object-oriented language that
