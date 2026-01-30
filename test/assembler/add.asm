@@ -1,0 +1,9 @@
+@2
+D=A
+//TEST THIS THING
+//
+
+@3
+D=D+A
+@0
+M=D
