@@ -273,24 +273,12 @@ def is_skipped_line(line) -> bool:
         return True
     return False
 
-
-def main():
-    if len(sys.argv) != 3:
-        print("I need the input AND output filenames")
-        sys.exit(1)
-
-    input_path = sys.argv[1]
-    output_path = sys.argv[2]
-
-    with open(input_path, "r") as f_input:
-        lines = f_input.readlines()
-
+def assemble(lines):
     # Pass for user defined symbols
     for i, line in enumerate(lines):
         if is_skipped_line(line):
             continue
         symbol_parser(line, i)
-
     output = []
 
     # Pass for command identification
@@ -304,8 +292,20 @@ def main():
         if not parsed:
             continue
         output.append(parsed)
+    return [x + "\n" for x in output]
 
-    output_with_newlines = [x + "\n" for x in output]
+def main():
+    if len(sys.argv) != 3:
+        print("I need the input AND output filenames")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
+
+    with open(input_path, "r") as f_input:
+        input_lines = f_input.readlines()
+
+    output_with_newlines = assemble(input_lines)
 
     with open(output_path, "w") as outfile:
         outfile.writelines(output_with_newlines)
