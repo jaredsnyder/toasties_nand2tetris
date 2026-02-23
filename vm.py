@@ -37,11 +37,11 @@
 ## Initialization
 RAM = [0 for _ in range(16384)]
 
-SP = 0
-LCL = 1
-ARG = 2
-THIS = 3
-THAT = 4
+SP_address = 0
+LCL_address = 1
+ARG_address = 2
+THIS_address = 3
+THAT_address = 4
 
 TEMP_RANGE = (5, 12)
 STATIC_RANGE = (16, 255)
@@ -49,8 +49,30 @@ STACK_RANGE = (256, 2047)
 
 
 def print_stack():
-    print(RAM[STACK_RANGE[0] : RAM[SP] + 1])
+    print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
     return
+
+def constant_push(the_constant):
+    """
+    Takes in a the constant
+    Returns list of strings, the order of assembly instructions that does 'push'
+    """
+    RAM[SP_address] += 1
+    return 
+    #["@the_constant",
+    # "@SP",
+    # "A=M",
+    # "M=D",
+    # ]
+    # // SP++
+    # @SP
+    # M=M+1]
+
+
+
+
+def pop():
+    RAM[SP] -= 1
 
 
 # Initialize pointers
@@ -73,3 +95,4 @@ RAM[SP] -= 1
 print_stack()
 print(RAM[RAM[LCL]])
 print(RAM[SP])
+

@@ -1,0 +1,11 @@
+// to test basic arithmetic, example from book, page 131
+// Executes pop and push commands.
+// d = (2 - x) + (y + 9)
+push 2
+push x
+sub
+push y
+push 9
+add
+add
+pop d
