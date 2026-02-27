@@ -57,18 +57,34 @@ def constant_push(the_constant):
     Takes in a the constant
     Returns list of strings, the order of assembly instructions that does 'push'
     """
-    RAM[SP_address] += 1
-    return 
-    #["@the_constant",
-    # "@SP",
-    # "A=M",
-    # "M=D",
-    # ]
-    # // SP++
-    # @SP
-    # M=M+1]
+    return [
+        f"@{the_constant}",
+        "D=A",
+        f"@{SP_address}",
+        "A=M",
+        "M=D",
+        f"@{SP_address}",
+        "M=M+1"
+    ]
 
+"""
+A is the memory address we are pointing to
+M is the value at memory address A
+D is a spare register to use
+"""
 
+def simple_add(c1, c2):
+    """
+    adds two constants, c1 and c2
+    """
+    return [
+        f"@{c1}",
+        "D=A",
+        f"@{c2}",
+        "D=D+A",
+        "@{SP_address}",
+        "M=D",
+    ]
 
 
 def pop():
