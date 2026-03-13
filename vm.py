@@ -68,7 +68,7 @@ def constant_push(the_constant):
     ]
 
 """
-A is the memory address we are pointing to
+A is the memory address we are pointing to with the stack pointer, but we can use it as data, too
 M is the value at memory address A
 D is a spare register to use
 """
@@ -81,9 +81,39 @@ def simple_add(c1, c2):
         f"@{c1}",
         "D=A",
         f"@{c2}",
-        "D=D+A",
-        "@{SP_address}",
+        "D=D+A", # here the address at A is the constant c2, so we're using it as data here
+        f"@{SP_address}",
         "M=D",
+    ]
+
+def real_add():
+    """
+    adds two constants from the top of the stack
+    places the result at the top of the stack
+
+    """
+
+    # CPU Emulator's  RAM visualizer tip:
+    # left hand side is A
+    # right hand side is D
+    return [
+        # take 0, load it into the A register.
+        # M register will have the value at SP_address, which is the stack pointer
+        # Setting A=0, M=value of SP
+        # M now holds the value
+        f"@{SP_address}",
+
+        # Decrementing the stack pointer. M has value: stack pointer - 1
+        "M=M-1",
+
+        # A has the stack pointer's address in M, (which is stack pointer - 1)
+        # M has the value at the address of the decremented stack pointer
+        "A=M",
+
+        # We left off here.
+        # We were using the CPU emulator to walk through this first attempted implementation.
+        "D=M",
+        "D=D+A"
     ]
 
 
@@ -111,4 +141,3 @@ RAM[SP] -= 1
 print_stack()
 print(RAM[RAM[LCL]])
 print(RAM[SP])
-
