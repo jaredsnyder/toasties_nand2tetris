@@ -52,6 +52,7 @@ def print_stack():
     print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
     return
 
+
 def constant_push(the_constant):
     """
     Takes in a the constant
@@ -64,8 +65,9 @@ def constant_push(the_constant):
         "A=M",
         "M=D",
         f"@{SP_address}",
-        "M=M+1"
+        "M=M+1",
     ]
+
 
 """
 A is the memory address we are pointing to with the stack pointer, but we can use it as data, too
@@ -73,20 +75,34 @@ M is the value at memory address A
 D is a spare register to use
 """
 
-def simple_add(c1, c2):
-    """
-    adds two constants, c1 and c2
-    """
-    return [
-        f"@{c1}",
-        "D=A",
-        f"@{c2}",
-        "D=D+A", # here the address at A is the constant c2, so we're using it as data here
-        f"@{SP_address}",
-        "M=D",
-    ]
 
-def real_add():
+def binary_operator(instruction_list):
+    grab_values_off_stack = [
+        # take 0, load it into the A register.
+        # M register will have the value at SP_address, which is the stack pointer
+        # Setting A=0, M=value of SP
+        # M now holds the value
+        f"@{SP_address}",
+        # set the Address to the value at the stack pointer
+        "M=M-1",
+        "A=M",
+        # set the D register to the value
+        "D=M",
+        # decrement stack pointer
+        f"@{SP_address}",
+        "M=M-1",
+        # get value on top of stack
+        "A=M",
+    ]
+    set_stack_and_increment = [
+        "M=D",
+        # increment so stack pointer is pointed at "blank" spot
+        "M=M+1",
+    ]
+    return grab_values_off_stack + instruction_list + set_stack_and_increment
+
+
+def add():
     """
     adds two constants from the top of the stack
     places the result at the top of the stack
@@ -96,48 +112,62 @@ def real_add():
     # CPU Emulator's  RAM visualizer tip:
     # left hand side is A
     # right hand side is D
-    return [
-        # take 0, load it into the A register.
-        # M register will have the value at SP_address, which is the stack pointer
-        # Setting A=0, M=value of SP
-        # M now holds the value
-        f"@{SP_address}",
-
-        # Decrementing the stack pointer. M has value: stack pointer - 1
-        "M=M-1",
-
-        # A has the stack pointer's address in M, (which is stack pointer - 1)
-        # M has the value at the address of the decremented stack pointer
-        "A=M",
-
-        # We left off here.
-        # We were using the CPU emulator to walk through this first attempted implementation.
-        "D=M",
-        "D=D+A"
-    ]
+    return binary_operator(["D=D+M"])
 
 
-def pop():
-    RAM[SP] -= 1
+def sub():
+    """
+    subtracts two constants from the top of the stack
+    subracting the top of the stack (last in) from the number below
+    places the result at the top of the stack
+    """
+
+    # CPU Emulator's  RAM visualizer tip:
+    # left hand side is A
+    # right hand side is D
+    return binary_operator(["D=M-D"])
 
 
-# Initialize pointers
-RAM[SP] = STACK_RANGE[0]
-RAM[LCL] = 2048
-RAM[ARG] = 5000
+def eq():
+    """
+    idea: subtract and not,
+    that was if you get a zero, they are equal
+    not to turn 0 into 1 (true, probably?)
+    """
+    pass
 
 
-# push constant 10
-RAM[SP] += 1
-RAM[RAM[SP]] = 10
-
-print_stack()
-
-# pop local 0
-RAM[RAM[LCL] + 0] = RAM[RAM[SP]]
-RAM[SP] -= 1
+def is_skipped_line(line) -> bool:
+    if not line.strip():
+        return True
+    if line.strip()[0:2] == "//":
+        return True
+    return False
 
 
-print_stack()
-print(RAM[RAM[LCL]])
-print(RAM[SP])
+def main():
+    output = []
+    INPUT_FILENAME = "test/vm/SimpleAdd/SimpleAdd.vm"
+    OUTPUT_FILENAME = "output.asm"
+    # Pass for user defined symbols
+    for i, line in enumerate(open(INPUT_FILENAME).readlines()):
+        # iterate through vm code lines
+        if is_skipped_line(line):
+            continue
+        # modifying we have push and pop at the beginning
+        # arithmatic functions: add, sub, neg, eq, gt, lt, and, or, not
+        split_line = line.split()
+        if split_line[0] == "push":
+            if split_line[1] == "constant":
+                constant_val = split_line[2]
+                output += constant_push(constant_val)
+        if split_line[0] == "add":
+            output += add()
+
+    output_with_newlines = [x + "\n" for x in output]
+    with open(OUTPUT_FILENAME, "w") as outfile:
+        outfile.writelines(output_with_newlines)
+
+
+if __name__ == "__main__":
+    main()
