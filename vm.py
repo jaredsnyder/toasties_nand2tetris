@@ -47,6 +47,13 @@ TEMP_RANGE = (5, 12)
 STATIC_RANGE = (16, 255)
 STACK_RANGE = (256, 2047)
 
+OPERATIONS_LUT = {
+    "add": "binary",
+    "sub": "binary",
+    "eq": "binary",
+    "gt": "binary",
+    "lt": "binary",
+}
 
 def print_stack():
     print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
@@ -75,6 +82,16 @@ M is the value at memory address A
 D is a spare register to use
 """
 
+""" 03/27 notes
+Right now we're decrementing the SP at the beginning of every operation, and incrementing the SP
+at the end, this means between every command, we're incrementing and immediately decrementing again
+It looks weird, maybe we should refactor. But the code works so maybe don't fix if not broken lol
+We did neg, and, or, and not today, and got the code up to the point of simplelogic test
+
+Next time, we'll create the =, <, > operations :)
+
+We should also refactor the main function to not hardcode every command and function
+"""
 
 def binary_operator(instruction_list):
     grab_values_off_stack = [
@@ -96,10 +113,35 @@ def binary_operator(instruction_list):
     ]
     set_stack_and_increment = [
         "M=D",
+        # go back to the SP address
+        f"@{SP_address}",
         # increment so stack pointer is pointed at "blank" spot
         "M=M+1",
     ]
     return grab_values_off_stack + instruction_list + set_stack_and_increment
+
+
+def unitary_operator(instruction_list):
+    grab_values_off_stack = [
+        # take 0, load it into the A register.
+        # M register will have the value at SP_address, which is the stack pointer
+        # Setting A=0, M=value of SP
+        # M now holds the value
+        f"@{SP_address}",
+        # set the Address to the value at the stack pointer
+        "M=M-1",
+        "A=M",
+        # set the D register to the value
+        "D=M",
+    ]
+    leave_value_go_to_stack_and_increment = [
+        "M=D",
+        # go back to the SP address
+        f"@{SP_address}",
+        # increment so stack pointer is pointed at "blank" spot
+        "M=M+1",
+    ]
+    return grab_values_off_stack + instruction_list + leave_value_go_to_stack_and_increment
 
 
 def add():
@@ -135,7 +177,51 @@ def eq():
     not to turn 0 into 1 (true, probably?)
     """
     pass
+    
 
+def neg():
+    """
+    takes the item from the top of the stack
+    and sets to its negative
+    """
+
+    # CPU Emulator's  RAM visualizer tip:
+    # left hand side is A
+    # right hand side is D
+    return unitary_operator(["@0", "D=A-D", "A=M"])
+
+def and_operator():
+    """
+    takes the top two items off the stack
+    and compares for logical AND, returns result
+    """
+
+    # CPU Emulator's  RAM visualizer tip:
+    # left hand side is A
+    # right hand side is D
+    return binary_operator(["D=D&M"])
+
+def or_operator():
+    """
+    takes the top two items off the stack
+    and compares for logical OR, returns result
+    """
+
+    # CPU Emulator's  RAM visualizer tip:
+    # left hand side is A
+    # right hand side is D
+    return binary_operator(["D=D|M"])
+
+def not_operator():
+    """
+    takes the top item off the stack
+    sets to its logical NOT, returns result
+    """
+
+    # CPU Emulator's  RAM visualizer tip:
+    # left hand side is A
+    # right hand side is D
+    return unitary_operator(["D=!D"])
 
 def is_skipped_line(line) -> bool:
     if not line.strip():
@@ -147,7 +233,7 @@ def is_skipped_line(line) -> bool:
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/SimpleAdd/SimpleAdd.vm"
+    INPUT_FILENAME = "test/vm/SimpleAdd/SimpleLogic.vm"
     OUTPUT_FILENAME = "output.asm"
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
@@ -163,6 +249,8 @@ def main():
                 output += constant_push(constant_val)
         if split_line[0] == "add":
             output += add()
+        if split_line[0] == "neg":
+            output += neg()
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
