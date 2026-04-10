@@ -176,8 +176,47 @@ def eq():
     that was if you get a zero, they are equal
     not to turn 0 into 1 (true, probably?)
     """
-    pass
-    
+    return sub() + not_operator()
+
+"""
+x > y => x - y
+         positive means true
+         negative means false
+check left most digit to determine if result is negative
+
+<start of stack>
+X1
+X2
+<end of stack>
+lt
+
+lt returns X1 < x2
+"""
+
+def lt():
+    """
+    idea:
+    subract the top of the stack (last in) from the number below
+    if difference is not negative, return false
+    if difference is negative, return true
+    !!! handle eq case too?
+    X1 - X2
+    push 16384 -> 100 0000 0000 0000
+    AND
+    EQ -> true means result is negative
+    """
+    return []
+
+def gt():
+    """
+    X1 > X2
+    idea:
+    subract the top of the stack (last in) from the number below
+    if difference is negative OR zero, return false
+    if difference is positive, return true
+    !!! handle eq case too?
+    """
+    return []
 
 def neg():
     """
@@ -251,6 +290,8 @@ def main():
             output += add()
         if split_line[0] == "neg":
             output += neg()
+        if split_line[0] == "eq":
+            output += eq()
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
