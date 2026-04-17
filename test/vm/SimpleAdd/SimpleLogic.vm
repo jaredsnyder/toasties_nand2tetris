@@ -1,11 +1,10 @@
 // This file is part of www.nand2tetris.org
 // and the book "The Elements of Computing Systems"
 // by Nisan and Schocken, MIT Press.
-// File name: projects/7/StackArithmetic/SimpleAdd/SimpleAdd.vm
+// File name: projects/7/StackArithmetic/SimpleAdd/SimpleLogic.vm
 
 // Pushes constants and does logical comparisons with them.
 
 push constant 7
 push constant 8
-neg
-add
+lt

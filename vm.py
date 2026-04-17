@@ -178,24 +178,10 @@ def eq():
     """
     return sub() + not_operator()
 
-"""
-x > y => x - y
-         positive means true
-         negative means false
-check left most digit to determine if result is negative
-
-<start of stack>
-X1
-X2
-<end of stack>
-lt
-
-lt returns X1 < x2
-"""
 
 def lt():
     """
-    idea:
+    idea 1:
     subract the top of the stack (last in) from the number below
     if difference is not negative, return false
     if difference is negative, return true
@@ -204,8 +190,31 @@ def lt():
     push 16384 -> 100 0000 0000 0000
     AND
     EQ -> true means result is negative
+
+    idea 2:
+    subract the top of the stack (last in) from the number below
+    use the JLT instructions to figure out if the number is less, eq, or greater
+    if its less than, we'll jump, and the place we jump to will set the result to true
+    otherwise, set the result to false on the result part of the top of the stack
+    set stack pointer to that place
     """
-    return []
+    return sub() + [
+        "@IS_LESS_THAN",
+        "D;JLT",
+        f"@{SP_address}",
+        "M=M-1",
+        "A=M",
+        "M=0",
+        "@END",
+        "0;JMP",
+        "(IS_LESS_THAN)",
+            f"@{SP_address}",
+            "M=M-1",
+            "A=M",
+            "M=-1",
+        "(END)",
+    ]
+
 
 def gt():
     """
@@ -292,6 +301,8 @@ def main():
             output += neg()
         if split_line[0] == "eq":
             output += eq()
+        if split_line[0] == "lt":
+            output += lt()
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
