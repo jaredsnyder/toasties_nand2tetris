@@ -1,5 +1,4 @@
-INPUT_FILENAME = "max.asm"
-OUTPUT_FILENAME = "max.hack"
+import sys
 
 A_INSTRUCTION = "A_INSTRUCTION"
 C_INSTRUCTION = "C_INSTRUCTION"
@@ -274,18 +273,16 @@ def is_skipped_line(line) -> bool:
         return True
     return False
 
-
-if __name__ == "__main__":
-    output = []
-
+def assemble(lines):
     # Pass for user defined symbols
-    for i, line in enumerate(open(INPUT_FILENAME).readlines()):
+    for i, line in enumerate(lines):
         if is_skipped_line(line):
             continue
         symbol_parser(line, i)
+    output = []
 
     # Pass for command identification
-    for line in open(INPUT_FILENAME).readlines():
+    for line in lines:
         print(line)
         if is_skipped_line(line):
             continue
@@ -295,7 +292,23 @@ if __name__ == "__main__":
         if not parsed:
             continue
         output.append(parsed)
+    return [x + "\n" for x in output]
 
-    output_with_newlines = [x + "\n" for x in output]
-    with open(OUTPUT_FILENAME, "w") as outfile:
+def main():
+    if len(sys.argv) != 3:
+        print("I need the input AND output filenames")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
+
+    with open(input_path, "r") as f_input:
+        input_lines = f_input.readlines()
+
+    output_with_newlines = assemble(input_lines)
+
+    with open(output_path, "w") as outfile:
         outfile.writelines(output_with_newlines)
+
+if __name__ == "__main__":
+    main()
