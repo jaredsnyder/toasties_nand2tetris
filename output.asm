@@ -1,3 +1,5 @@
+//push constant 7
+
 @7
 D=A
 @0
@@ -5,6 +7,8 @@ A=M
 M=D
 @0
 M=M+1
+//push constant 8
+
 @8
 D=A
 @0
@@ -12,6 +16,17 @@ A=M
 M=D
 @0
 M=M+1
+//push local 0
+
+@2048
+D=M
+@0
+A=M
+M=D
+@0
+M=M+1
+//lt
+
 @0
 M=M-1
 A=M

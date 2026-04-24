@@ -46,6 +46,7 @@ THAT_address = 4
 TEMP_RANGE = (5, 12)
 STATIC_RANGE = (16, 255)
 STACK_RANGE = (256, 2047)
+LOCAL_RANGE = (2048, 9999)
 
 OPERATIONS_LUT = {
     "add": "binary",
@@ -54,6 +55,7 @@ OPERATIONS_LUT = {
     "gt": "binary",
     "lt": "binary",
 }
+
 
 def print_stack():
     print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
@@ -68,6 +70,18 @@ def constant_push(the_constant):
     return [
         f"@{the_constant}",
         "D=A",
+        f"@{SP_address}",
+        "A=M",
+        "M=D",
+        f"@{SP_address}",
+        "M=M+1",
+    ]
+
+
+def local_push(local_index: int):
+    return [
+        f"@{local_index + LOCAL_RANGE[0]}",
+        "D=M",
         f"@{SP_address}",
         "A=M",
         "M=D",
@@ -92,6 +106,7 @@ Next time, we'll create the =, <, > operations :)
 
 We should also refactor the main function to not hardcode every command and function
 """
+
 
 def binary_operator(instruction_list):
     grab_values_off_stack = [
@@ -141,7 +156,9 @@ def unitary_operator(instruction_list):
         # increment so stack pointer is pointed at "blank" spot
         "M=M+1",
     ]
-    return grab_values_off_stack + instruction_list + leave_value_go_to_stack_and_increment
+    return (
+        grab_values_off_stack + instruction_list + leave_value_go_to_stack_and_increment
+    )
 
 
 def add():
@@ -208,10 +225,10 @@ def lt():
         "@END",
         "0;JMP",
         "(IS_LESS_THAN)",
-            f"@{SP_address}",
-            "M=M-1",
-            "A=M",
-            "M=-1",
+        f"@{SP_address}",
+        "M=M-1",
+        "A=M",
+        "M=-1",
         "(END)",
     ]
 
@@ -225,7 +242,23 @@ def gt():
     if difference is positive, return true
     !!! handle eq case too?
     """
-    return []
+    return sub() + [
+        "@IS_GREATER_THAN",
+        "D;JGT",
+        f"@{SP_address}",
+        "M=M-1",
+        "A=M",
+        "M=0",
+        "@END",
+        "0;JMP",
+        "(IS_GREATER_THAN)",
+        f"@{SP_address}",
+        "M=M-1",
+        "A=M",
+        "M=-1",
+        "(END)",
+    ]
+
 
 def neg():
     """
@@ -238,6 +271,7 @@ def neg():
     # right hand side is D
     return unitary_operator(["@0", "D=A-D", "A=M"])
 
+
 def and_operator():
     """
     takes the top two items off the stack
@@ -248,6 +282,7 @@ def and_operator():
     # left hand side is A
     # right hand side is D
     return binary_operator(["D=D&M"])
+
 
 def or_operator():
     """
@@ -260,6 +295,7 @@ def or_operator():
     # right hand side is D
     return binary_operator(["D=D|M"])
 
+
 def not_operator():
     """
     takes the top item off the stack
@@ -270,6 +306,7 @@ def not_operator():
     # left hand side is A
     # right hand side is D
     return unitary_operator(["D=!D"])
+
 
 def is_skipped_line(line) -> bool:
     if not line.strip():
@@ -283,6 +320,10 @@ def main():
     output = []
     INPUT_FILENAME = "test/vm/SimpleAdd/SimpleLogic.vm"
     OUTPUT_FILENAME = "output.asm"
+
+    # Allocate Memory
+    RAM[LOCAL_RANGE[0]] = 22
+
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
         # iterate through vm code lines
@@ -291,10 +332,15 @@ def main():
         # modifying we have push and pop at the beginning
         # arithmatic functions: add, sub, neg, eq, gt, lt, and, or, not
         split_line = line.split()
+        output += [f"//{line}"]
         if split_line[0] == "push":
             if split_line[1] == "constant":
                 constant_val = split_line[2]
                 output += constant_push(constant_val)
+            elif split_line[1] == "local":
+                local_val = int(split_line[2])
+                output += local_push(local_val)
+
         if split_line[0] == "add":
             output += add()
         if split_line[0] == "neg":
