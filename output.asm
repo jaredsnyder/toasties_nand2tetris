@@ -18,37 +18,18 @@ M=D
 M=M+1
 //push local 0
 
-@2048
+@3000
 D=M
 @0
 A=M
 M=D
 @0
 M=M+1
-//lt
+//pop local 2
 
 @0
 M=M-1
 A=M
 D=M
-@0
-M=M-1
-A=M
-D=M-D
+@3002
 M=D
-@0
-M=M+1
-@IS_LESS_THAN
-D;JLT
-@0
-M=M-1
-A=M
-M=0
-@END
-0;JMP
-(IS_LESS_THAN)
-@0
-M=M-1
-A=M
-M=-1
-(END)

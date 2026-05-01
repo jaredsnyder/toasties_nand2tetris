@@ -34,6 +34,8 @@
 # be leveraging the segments we set up to do stack arithmetic and stack logical operations. In Chapther 8 we'll handle
 # branching control flow and function commands.
 
+from typing import Literal
+
 ## Initialization
 RAM = [0 for _ in range(16384)]
 
@@ -43,10 +45,16 @@ ARG_address = 2
 THIS_address = 3
 THAT_address = 4
 
+SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "pointer"]
+
 TEMP_RANGE = (5, 12)
 STATIC_RANGE = (16, 255)
 STACK_RANGE = (256, 2047)
-LOCAL_RANGE = (2048, 9999)
+LOCAL_RANGE = (3000, 3099)
+ARGUMENT_RANGE = (3100, 3199)
+THIS_RANGE = (3200, 3299)
+THAT_RANGE = (3300, 3399)
+POINTER_RANGE = (THIS_RANGE[0], THAT_RANGE[0])
 
 OPERATIONS_LUT = {
     "add": "binary",
@@ -60,6 +68,40 @@ OPERATIONS_LUT = {
 def print_stack():
     print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
     return
+
+
+def grab_value_off_stack():
+    return [
+        # take 0, load it into the A register.
+        # M register will have the value at SP_address, which is the stack pointer
+        # Setting A=0, M=value of SP
+        # M now holds the value
+        f"@{SP_address}",
+        # set the Address to the value at the stack pointer
+        "M=M-1",
+        "A=M",
+        # set the D register to the value
+        "D=M",
+    ]
+
+
+def get_value_for_segment(segment: SegmentType, index: int):
+    match segment:
+        case "argument":
+            value = ARGUMENT_RANGE[0] + index
+        case "local":
+            value = LOCAL_RANGE[0] + index
+        case "that":
+            value = THAT_RANGE[0] + index
+        case "this":
+            value = THIS_RANGE[0] + index
+        case "static":
+            value = STATIC_RANGE[0] + index
+        case "temp":
+            value = TEMP_RANGE[0] + index
+        case "pointer":
+            value = POINTER_RANGE[0] + index
+    return value
 
 
 def constant_push(the_constant):
@@ -78,15 +120,22 @@ def constant_push(the_constant):
     ]
 
 
-def local_push(local_index: int):
+def generic_push(segment: SegmentType, index: int):
     return [
-        f"@{local_index + LOCAL_RANGE[0]}",
+        f"@{get_value_for_segment(segment, index)}",
         "D=M",
         f"@{SP_address}",
         "A=M",
         "M=D",
         f"@{SP_address}",
         "M=M+1",
+    ]
+
+
+def generic_pop(segment: SegmentType, index: int):
+    return grab_value_off_stack() + [
+        f"@{get_value_for_segment(segment, index)}",
+        "M=D",
     ]
 
 
@@ -107,19 +156,8 @@ Next time, we'll create the =, <, > operations :)
 We should also refactor the main function to not hardcode every command and function
 """
 
-
 def binary_operator(instruction_list):
-    grab_values_off_stack = [
-        # take 0, load it into the A register.
-        # M register will have the value at SP_address, which is the stack pointer
-        # Setting A=0, M=value of SP
-        # M now holds the value
-        f"@{SP_address}",
-        # set the Address to the value at the stack pointer
-        "M=M-1",
-        "A=M",
-        # set the D register to the value
-        "D=M",
+    grab_values_off_stack = grab_value_off_stack() + [
         # decrement stack pointer
         f"@{SP_address}",
         "M=M-1",
@@ -137,18 +175,6 @@ def binary_operator(instruction_list):
 
 
 def unitary_operator(instruction_list):
-    grab_values_off_stack = [
-        # take 0, load it into the A register.
-        # M register will have the value at SP_address, which is the stack pointer
-        # Setting A=0, M=value of SP
-        # M now holds the value
-        f"@{SP_address}",
-        # set the Address to the value at the stack pointer
-        "M=M-1",
-        "A=M",
-        # set the D register to the value
-        "D=M",
-    ]
     leave_value_go_to_stack_and_increment = [
         "M=D",
         # go back to the SP address
@@ -157,7 +183,7 @@ def unitary_operator(instruction_list):
         "M=M+1",
     ]
     return (
-        grab_values_off_stack + instruction_list + leave_value_go_to_stack_and_increment
+        grab_value_off_stack() + instruction_list + leave_value_go_to_stack_and_increment
     )
 
 
@@ -337,10 +363,13 @@ def main():
             if split_line[1] == "constant":
                 constant_val = split_line[2]
                 output += constant_push(constant_val)
-            elif split_line[1] == "local":
-                local_val = int(split_line[2])
-                output += local_push(local_val)
-
+            elif split_line[1] == "argument" or split_line[1] == "local" or split_line[1] == "that" or split_line[1] == "this" or split_line[1] == "static" or split_line[1] == "temp" or split_line[1] == "pointer":
+                index = int(split_line[2])
+                output += generic_push(split_line[1], index)
+        if split_line[0] == "pop":
+            if split_line[1] == "argument" or split_line[1] == "local" or split_line[1] == "that" or split_line[1] == "this" or split_line[1] == "static" or split_line[1] == "temp" or split_line[1] == "pointer":
+                index = int(split_line[2])
+                output += generic_pop(split_line[1], index)
         if split_line[0] == "add":
             output += add()
         if split_line[0] == "neg":

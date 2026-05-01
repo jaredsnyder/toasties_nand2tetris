@@ -8,4 +8,4 @@
 push constant 7
 push constant 8
 push local 0
-lt
+pop local 2
