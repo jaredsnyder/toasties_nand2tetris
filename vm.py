@@ -49,11 +49,11 @@ SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "po
 
 TEMP_RANGE = (5, 12)
 STATIC_RANGE = (16, 255)
-STACK_RANGE = (256, 2047)
-LOCAL_RANGE = (3000, 3099)
-ARGUMENT_RANGE = (3100, 3199)
-THIS_RANGE = (3200, 3299)
-THAT_RANGE = (3300, 3399)
+STACK_RANGE = (256, 299)
+LOCAL_RANGE = (300, 399)
+ARGUMENT_RANGE = (400, 2999)
+THIS_RANGE = (3030, 3009)
+THAT_RANGE = (3040, 3399)
 POINTER_RANGE = (THIS_RANGE[0], THAT_RANGE[0])
 
 OPERATIONS_LUT = {
@@ -344,8 +344,8 @@ def is_skipped_line(line) -> bool:
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/SimpleAdd/SimpleLogic.vm"
-    OUTPUT_FILENAME = "output.asm"
+    INPUT_FILENAME = "test/vm/PointerTest/PointerTest.vm"
+    OUTPUT_FILENAME = "pointer_test_output.asm"
 
     # Allocate Memory
     RAM[LOCAL_RANGE[0]] = 22
@@ -372,12 +372,22 @@ def main():
                 output += generic_pop(split_line[1], index)
         if split_line[0] == "add":
             output += add()
+        if split_line[0] == "sub":
+            output += sub()
         if split_line[0] == "neg":
             output += neg()
         if split_line[0] == "eq":
             output += eq()
         if split_line[0] == "lt":
             output += lt()
+        if split_line[0] == "gt":
+            output += gt()
+        if split_line[0] == "and":
+            output += and_operator()
+        if split_line[0] == "or":
+            output += or_operator()
+        if split_line[0] == "not":
+            output += not_operator()
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
