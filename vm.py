@@ -63,7 +63,10 @@ OPERATIONS_LUT = {
     "gt": "binary",
     "lt": "binary",
 }
-
+# 
+# TODO: we need some kind of function to relate the address with the ranges, so instead of hard-coding the ranges, we should get the M of the address of the 
+# memory segment related to the segment. So if THIS_address(3) has 3300 in memory, then it should use the 3300 as the beginning of the THIS_RANGE, instead of 
+# the updating it in this translator.
 
 def print_stack():
     print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
