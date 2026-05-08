@@ -7,5 +7,5 @@
 
 push constant 7
 push constant 8
-push local 0
+push that 0
 pop local 2

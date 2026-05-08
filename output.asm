@@ -16,9 +16,9 @@ A=M
 M=D
 @0
 M=M+1
-//push local 0
+//push that 0
 
-@3000
+@3300
 D=M
 @0
 A=M
