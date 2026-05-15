@@ -69,6 +69,7 @@ OPERATIONS_LUT = {
 # memory segment related to the segment. So if THIS_address(3) has 3300 in memory,
 #  then it should use the 3300 as the beginning of the THIS_RANGE, instead of
 # the updating it in this translator.
+# TODO DO THIS TODO AND DON"T ARGUE ABOUT IT FOR HALF AN HOUR
 
 
 def print_stack():
