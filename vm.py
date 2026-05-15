@@ -52,7 +52,7 @@ STATIC_RANGE = (16, 255)
 STACK_RANGE = (256, 299)
 LOCAL_RANGE = (300, 399)
 ARGUMENT_RANGE = (400, 2999)
-THIS_RANGE = (3030, 3009)
+THIS_RANGE = (3000, 3009)
 THAT_RANGE = (3040, 3399)
 POINTER_RANGE = (THIS_RANGE[0], THAT_RANGE[0])
 
@@ -63,10 +63,13 @@ OPERATIONS_LUT = {
     "gt": "binary",
     "lt": "binary",
 }
-# 
-# TODO: we need some kind of function to relate the address with the ranges, so instead of hard-coding the ranges, we should get the M of the address of the 
-# memory segment related to the segment. So if THIS_address(3) has 3300 in memory, then it should use the 3300 as the beginning of the THIS_RANGE, instead of 
+#
+# TODO: we need some kind of function to relate the address with the ranges,
+# so instead of hard-coding the ranges, we should get the M of the address of the
+# memory segment related to the segment. So if THIS_address(3) has 3300 in memory,
+#  then it should use the 3300 as the beginning of the THIS_RANGE, instead of
 # the updating it in this translator.
+
 
 def print_stack():
     print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
@@ -159,6 +162,7 @@ Next time, we'll create the =, <, > operations :)
 We should also refactor the main function to not hardcode every command and function
 """
 
+
 def binary_operator(instruction_list):
     grab_values_off_stack = grab_value_off_stack() + [
         # decrement stack pointer
@@ -186,7 +190,9 @@ def unitary_operator(instruction_list):
         "M=M+1",
     ]
     return (
-        grab_value_off_stack() + instruction_list + leave_value_go_to_stack_and_increment
+        grab_value_off_stack()
+        + instruction_list
+        + leave_value_go_to_stack_and_increment
     )
 
 
@@ -345,10 +351,26 @@ def is_skipped_line(line) -> bool:
     return False
 
 
+## Start of Chapter 8 methods
+def write_label(label_name):
+    """Writes assembly code to handle the label command"""
+    return [f"({label_name})"]
+
+
+def write_goto(label_name):
+    return [f"@{label_name}", "0;JMP"]
+
+
+def write_if(label_name):
+    """Writes assembly code to handle the if-goto command"""
+    x = grab_value_off_stack()
+    return x + [f"@{label_name}", "D;JNE"]
+
+
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/PointerTest/PointerTest.vm"
-    OUTPUT_FILENAME = "pointer_test_output.asm"
+    INPUT_FILENAME = "test/vm/Fibonacci/Fibonacci.vm"
+    OUTPUT_FILENAME = "fibonacci1_output.asm"
 
     # Allocate Memory
     RAM[LOCAL_RANGE[0]] = 22
@@ -366,11 +388,27 @@ def main():
             if split_line[1] == "constant":
                 constant_val = split_line[2]
                 output += constant_push(constant_val)
-            elif split_line[1] == "argument" or split_line[1] == "local" or split_line[1] == "that" or split_line[1] == "this" or split_line[1] == "static" or split_line[1] == "temp" or split_line[1] == "pointer":
+            elif (
+                split_line[1] == "argument"
+                or split_line[1] == "local"
+                or split_line[1] == "that"
+                or split_line[1] == "this"
+                or split_line[1] == "static"
+                or split_line[1] == "temp"
+                or split_line[1] == "pointer"
+            ):
                 index = int(split_line[2])
                 output += generic_push(split_line[1], index)
         if split_line[0] == "pop":
-            if split_line[1] == "argument" or split_line[1] == "local" or split_line[1] == "that" or split_line[1] == "this" or split_line[1] == "static" or split_line[1] == "temp" or split_line[1] == "pointer":
+            if (
+                split_line[1] == "argument"
+                or split_line[1] == "local"
+                or split_line[1] == "that"
+                or split_line[1] == "this"
+                or split_line[1] == "static"
+                or split_line[1] == "temp"
+                or split_line[1] == "pointer"
+            ):
                 index = int(split_line[2])
                 output += generic_pop(split_line[1], index)
         if split_line[0] == "add":
@@ -391,6 +429,12 @@ def main():
             output += or_operator()
         if split_line[0] == "not":
             output += not_operator()
+        if split_line[0] == "label":
+            output += write_label(split_line[1])
+        if split_line[0] == "goto":
+            output += write_goto(split_line[1])
+        if split_line[0] == "if-goto":
+            output += write_if(split_line[1])
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
