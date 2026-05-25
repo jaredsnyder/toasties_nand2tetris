@@ -49,8 +49,8 @@ SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "po
 
 TEMP_RANGE = (5, 12)
 STATIC_RANGE = (16, 255)
-STACK_RANGE = (256, 299)
-LOCAL_RANGE = (300, 399)
+# STACK_RANGE = (256, 299)
+LOCAL_RANGE_START = 300
 ARGUMENT_RANGE = (400, 2999)
 THIS_RANGE = (3000, 3009)
 THAT_RANGE = (3040, 3399)
@@ -71,10 +71,64 @@ OPERATIONS_LUT = {
 # the updating it in this translator.
 # TODO DO THIS TODO AND DON"T ARGUE ABOUT IT FOR HALF AN HOUR
 
+def grab_range_value(segment: SegmentType, index: int):
+    match segment:
+        case "local":
+            return [
+                # take 0, load it into the A register.
+                # M register will have the value at SP_address, which is the stack pointer
+                # Setting A=0, M=value of SP
+                # M now holds the value
+                f"@{LCL_address}",
+                # set the D register to the value
+                "D=M",
+                f"@{index}",
+                "A=D+A",
+            ]
+        case "argument":
+            return [
+                # take 0, load it into the A register.
+                # M register will have the value at SP_address, which is the stack pointer
+                # Setting A=0, M=value of SP
+                # M now holds the value
+                f"@{ARG_address}",
+                # set the D register to the value
+                "D=M",
+                f"@{index}",
+                "A=D+A",
+            ]
+        case "that":
+            return [
+                # take 0, load it into the A register.
+                # M register will have the value at SP_address, which is the stack pointer
+                # Setting A=0, M=value of SP
+                # M now holds the value
+                f"@{THAT_address}",
+                # set the D register to the value
+                "D=M",
+                f"@{index}",
+                "A=D+A",
+            ]
+        case "this":
+            return [
+                # take 0, load it into the A register.
+                # M register will have the value at SP_address, which is the stack pointer
+                # Setting A=0, M=value of SP
+                # M now holds the value
+                f"@{THIS_address}",
+                # set the D register to the value
+                "D=M",
+                f"@{index}",
+                "A=D+A",
+            ]
+        case "static":
+            return []
+        case "temp":
+            return []
+        case "pointer":
+            return []
+    return 
 
-def print_stack():
-    print(RAM[STACK_RANGE[0] : RAM[SP_address] + 1])
-    return
 
 
 def grab_value_off_stack():
@@ -97,7 +151,7 @@ def get_value_for_segment(segment: SegmentType, index: int):
         case "argument":
             value = ARGUMENT_RANGE[0] + index
         case "local":
-            value = LOCAL_RANGE[0] + index
+            value = LOCAL_RANGE_START + index
         case "that":
             value = THAT_RANGE[0] + index
         case "this":
@@ -128,8 +182,7 @@ def constant_push(the_constant):
 
 
 def generic_push(segment: SegmentType, index: int):
-    return [
-        f"@{get_value_for_segment(segment, index)}",
+    return grab_range_value(segment, index) + [
         "D=M",
         f"@{SP_address}",
         "A=M",
@@ -370,11 +423,11 @@ def write_if(label_name):
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/Fibonacci/Fibonacci.vm"
-    OUTPUT_FILENAME = "fibonacci1_output.asm"
+    INPUT_FILENAME = "test/vm/BasicTest/BasicTest.vm"
+    OUTPUT_FILENAME = "basictest1_output.asm"
 
     # Allocate Memory
-    RAM[LOCAL_RANGE[0]] = 22
+    RAM[LOCAL_RANGE_START] = 22
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
