@@ -47,14 +47,8 @@ THAT_address = 4
 
 SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "pointer"]
 
-TEMP_RANGE = (5, 12)
-STATIC_RANGE = (16, 255)
-# STACK_RANGE = (256, 299)
-LOCAL_RANGE_START = 300
-ARGUMENT_RANGE = (400, 2999)
-THIS_RANGE = (3000, 3009)
-THAT_RANGE = (3040, 3399)
-POINTER_RANGE = (THIS_RANGE[0], THAT_RANGE[0])
+STATIC_address = 16 # 16 - 255
+TEMP_address = 5 # 5 - 12
 
 OPERATIONS_LUT = {
     "add": "binary",
@@ -79,11 +73,11 @@ def grab_range_value(segment: SegmentType, index: int):
                 # M register will have the value at SP_address, which is the stack pointer
                 # Setting A=0, M=value of SP
                 # M now holds the value
-                f"@{LCL_address}",
+                f"@{LCL_address}", # M is 200, A is 1
                 # set the D register to the value
-                "D=M",
-                f"@{index}",
-                "A=D+A",
+                "D=M", # D is 200
+                f"@{index}", # grab_range_value(local, 0) -> # M is 256, A is 0
+                "A=D+A", # A is (200 + 0)
             ]
         case "argument":
             return [
@@ -122,11 +116,30 @@ def grab_range_value(segment: SegmentType, index: int):
                 "A=D+A",
             ]
         case "static":
-            return []
+            return [
+                f"@{STATIC_address}", # M is ??, A is 16
+                "D=A", # Be sure to get the value "16" instead of de-reffing what's at addr 16
+                f"@{index}",
+                "A=D+A",
+            ]
         case "temp":
-            return []
-        case "pointer":
-            return []
+            return [
+                f"@{TEMP_address}", # M is ??, A is 5
+                "D=A", # Be sure to get the value "5" instead of de-reffing what's at addr 5
+                f"@{index}",
+                "A=D+A",
+            ]
+        case "pointer": # index will either be 0 (this) or 1 (that)
+            if index == 0:
+                return [
+                    f"@{THIS_address}",
+                    "A=M",
+                ]
+            else:
+                return [
+                    f"@{THAT_address}",
+                    "A=M",
+                ]
     return 
 
 
@@ -144,25 +157,6 @@ def grab_value_off_stack():
         # set the D register to the value
         "D=M",
     ]
-
-
-def get_value_for_segment(segment: SegmentType, index: int):
-    match segment:
-        case "argument":
-            value = ARGUMENT_RANGE[0] + index
-        case "local":
-            value = LOCAL_RANGE_START + index
-        case "that":
-            value = THAT_RANGE[0] + index
-        case "this":
-            value = THIS_RANGE[0] + index
-        case "static":
-            value = STATIC_RANGE[0] + index
-        case "temp":
-            value = TEMP_RANGE[0] + index
-        case "pointer":
-            value = POINTER_RANGE[0] + index
-    return value
 
 
 def constant_push(the_constant):
@@ -193,10 +187,26 @@ def generic_push(segment: SegmentType, index: int):
 
 
 def generic_pop(segment: SegmentType, index: int):
-    return grab_value_off_stack() + [
-        f"@{get_value_for_segment(segment, index)}",
-        "M=D",
-    ]
+    return (
+        grab_range_value(segment, index) + [
+            "A=@10000",
+            "M=D",
+        ]
+        +
+        grab_value_off_stack() + # D has our value
+        [
+            "@10000",
+            "A=M",
+            "M=D"
+        ]
+
+        # The value we are looking for is at mem loc 10000
+        # TODO: This is all wrong and needs work 5/29
+        # TODO: DRAW THE FUCKING OWL 🦉
+        # TODO: grab_range_value() is doing too much (probs just remove "A=D+A" and push/pop will vary at that stage)
+        # TODO: push needs `A=D+A`, pop needs `D=D+A`
+        # TODO: dunno WTF this means for pointer segment tho :shrug:
+    )
 
 
 """
@@ -425,9 +435,6 @@ def main():
     output = []
     INPUT_FILENAME = "test/vm/BasicTest/BasicTest.vm"
     OUTPUT_FILENAME = "basictest1_output.asm"
-
-    # Allocate Memory
-    RAM[LOCAL_RANGE_START] = 22
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
