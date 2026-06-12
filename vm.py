@@ -49,6 +49,7 @@ STATIC_address = 16 # 16 - 255
 
 SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "pointer"]
 
+# todo next time: we finished Fibonacci hehe back to chapter 8!
 
 OPERATIONS_LUT = {
     "add": "binary",
@@ -57,13 +58,6 @@ OPERATIONS_LUT = {
     "gt": "binary",
     "lt": "binary",
 }
-#
-# TODO: we need some kind of function to relate the address with the ranges,
-# so instead of hard-coding the ranges, we should get the M of the address of the
-# memory segment related to the segment. So if THIS_address(3) has 3300 in memory,
-#  then it should use the 3300 as the beginning of the THIS_RANGE, instead of
-# the updating it in this translator.
-# TODO DO THIS TODO AND DON"T ARGUE ABOUT IT FOR HALF AN HOUR
 
 def grab_range_value(segment: SegmentType, index: int):
     match segment:
@@ -112,7 +106,7 @@ def grab_range_value(segment: SegmentType, index: int):
                 return [
                 f"@{THIS_address}",
                 # set the D register to the value
-                "D=0"
+                "D=0" # we have to do this for generic_pop
                 ]
             else:
                 return [
@@ -120,7 +114,7 @@ def grab_range_value(segment: SegmentType, index: int):
                 # set the D register to the value
                 # "D=M",
                 # f"@{index}",
-                "D=0"
+                "D=0" # we have to do this for generic_pop, it kinda makes sense but we should refactor
                 ]
     return 
 
@@ -170,6 +164,22 @@ def generic_push(segment: SegmentType, index: int):
 
 
 def generic_pop(segment: SegmentType, index: int):
+    """
+    This current solution is shoddy as hell, we have to borrow some hopefully unused 
+    memory @10000 to store a fourth value because we need to add index and address but 
+    we also need to hold the value of interest (to be saved at the index+address address)
+    So this current is a lil dumb
+
+    Jared Snyder also came up w an alternate solution, maybe shoddier
+    What if we create a for loop that does M=M+1 index times,
+    If we can do this wo the D reg, then we wouldn't need a random memory spot to save this number
+
+    Third option to consider:
+    maybe one of these other memory segments we haven't really used/learned yet can be 
+    the spiritual successor to @10000. Like temp and static, maybee that why it's called that
+    temp?
+
+    """
     return (
         grab_range_value(segment, index) + [
             "D=D+A",
@@ -413,8 +423,8 @@ def write_if(label_name):
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/PointerTest/PointerTest.vm"
-    OUTPUT_FILENAME = "pointer_test_output.asm"
+    INPUT_FILENAME = "test/vm/Fibonacci/Fibonacci.vm"
+    OUTPUT_FILENAME = "fibonacci_output.asm"
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
