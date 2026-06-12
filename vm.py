@@ -44,11 +44,12 @@ LCL_address = 1
 ARG_address = 2
 THIS_address = 3
 THAT_address = 4
+TEMP_address = 5 # 5 - 12
+STATIC_address = 16 # 16 - 255
 
 SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "pointer"]
 
-STATIC_address = 16 # 16 - 255
-TEMP_address = 5 # 5 - 12
+# todo next time: we finished Fibonacci hehe back to chapter 8!
 
 OPERATIONS_LUT = {
     "add": "binary",
@@ -57,88 +58,63 @@ OPERATIONS_LUT = {
     "gt": "binary",
     "lt": "binary",
 }
-#
-# TODO: we need some kind of function to relate the address with the ranges,
-# so instead of hard-coding the ranges, we should get the M of the address of the
-# memory segment related to the segment. So if THIS_address(3) has 3300 in memory,
-#  then it should use the 3300 as the beginning of the THIS_RANGE, instead of
-# the updating it in this translator.
-# TODO DO THIS TODO AND DON"T ARGUE ABOUT IT FOR HALF AN HOUR
 
 def grab_range_value(segment: SegmentType, index: int):
     match segment:
         case "local":
             return [
-                # take 0, load it into the A register.
-                # M register will have the value at SP_address, which is the stack pointer
-                # Setting A=0, M=value of SP
-                # M now holds the value
                 f"@{LCL_address}", # M is 200, A is 1
                 # set the D register to the value
                 "D=M", # D is 200
                 f"@{index}", # grab_range_value(local, 0) -> # M is 256, A is 0
-                "A=D+A", # A is (200 + 0)
+                # "A=D+A", # A is (200 + 0)
             ]
         case "argument":
             return [
-                # take 0, load it into the A register.
-                # M register will have the value at SP_address, which is the stack pointer
-                # Setting A=0, M=value of SP
-                # M now holds the value
                 f"@{ARG_address}",
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
-                "A=D+A",
             ]
         case "that":
             return [
-                # take 0, load it into the A register.
-                # M register will have the value at SP_address, which is the stack pointer
-                # Setting A=0, M=value of SP
-                # M now holds the value
                 f"@{THAT_address}",
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
-                "A=D+A",
             ]
         case "this":
             return [
-                # take 0, load it into the A register.
-                # M register will have the value at SP_address, which is the stack pointer
-                # Setting A=0, M=value of SP
-                # M now holds the value
-                f"@{THIS_address}",
+                f"@{THIS_address}", # pop this 0 == save this number to THIS_ADDRESS + 0 (3000 + 0)
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
-                "A=D+A",
             ]
         case "static":
             return [
                 f"@{STATIC_address}", # M is ??, A is 16
-                "D=A", # Be sure to get the value "16" instead of de-reffing what's at addr 16
-                f"@{index}",
-                "A=D+A",
-            ]
+                "D=M", # Be sure to get the value "16" instead of de-reffing what's at addr 16
+                f"@{index}",            ]
         case "temp":
             return [
                 f"@{TEMP_address}", # M is ??, A is 5
-                "D=A", # Be sure to get the value "5" instead of de-reffing what's at addr 5
+                "D=M", # Be sure to get the value "5" instead of de-reffing what's at addr 5
                 f"@{index}",
-                "A=D+A",
             ]
         case "pointer": # index will either be 0 (this) or 1 (that)
             if index == 0:
                 return [
-                    f"@{THIS_address}",
-                    "A=M",
+                f"@{THIS_address}",
+                # set the D register to the value
+                "D=0" # we have to do this for generic_pop
                 ]
             else:
                 return [
-                    f"@{THAT_address}",
-                    "A=M",
+                f"@{THAT_address}",
+                # set the D register to the value
+                # "D=M",
+                # f"@{index}",
+                "D=0" # we have to do this for generic_pop, it kinda makes sense but we should refactor
                 ]
     return 
 
@@ -177,6 +153,7 @@ def constant_push(the_constant):
 
 def generic_push(segment: SegmentType, index: int):
     return grab_range_value(segment, index) + [
+        "A=D+A",
         "D=M",
         f"@{SP_address}",
         "A=M",
@@ -187,9 +164,26 @@ def generic_push(segment: SegmentType, index: int):
 
 
 def generic_pop(segment: SegmentType, index: int):
+    """
+    This current solution is shoddy as hell, we have to borrow some hopefully unused 
+    memory @10000 to store a fourth value because we need to add index and address but 
+    we also need to hold the value of interest (to be saved at the index+address address)
+    So this current is a lil dumb
+
+    Jared Snyder also came up w an alternate solution, maybe shoddier
+    What if we create a for loop that does M=M+1 index times,
+    If we can do this wo the D reg, then we wouldn't need a random memory spot to save this number
+
+    Third option to consider:
+    maybe one of these other memory segments we haven't really used/learned yet can be 
+    the spiritual successor to @10000. Like temp and static, maybee that why it's called that
+    temp?
+
+    """
     return (
         grab_range_value(segment, index) + [
-            "A=@10000",
+            "D=D+A",
+            "@10000",
             "M=D",
         ]
         +
@@ -200,12 +194,8 @@ def generic_pop(segment: SegmentType, index: int):
             "M=D"
         ]
 
-        # The value we are looking for is at mem loc 10000
-        # TODO: This is all wrong and needs work 5/29
-        # TODO: DRAW THE FUCKING OWL 🦉
-        # TODO: grab_range_value() is doing too much (probs just remove "A=D+A" and push/pop will vary at that stage)
-        # TODO: push needs `A=D+A`, pop needs `D=D+A`
-        # TODO: dunno WTF this means for pointer segment tho :shrug:
+        # TODO: the 10000 is a placeholder random memory for extra space to store the 
+        # 4 number we needed to do generic pop for now, maybe there's a better place
     )
 
 
@@ -433,8 +423,8 @@ def write_if(label_name):
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/BasicTest/BasicTest.vm"
-    OUTPUT_FILENAME = "basictest1_output.asm"
+    INPUT_FILENAME = "test/vm/Fibonacci/Fibonacci.vm"
+    OUTPUT_FILENAME = "fibonacci_output.asm"
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
