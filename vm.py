@@ -69,27 +69,18 @@ def grab_range_value(segment: SegmentType, index: int):
     match segment:
         case "local":
             return [
-                # take 0, load it into the A register.
-                # M register will have the value at SP_address, which is the stack pointer
-                # Setting A=0, M=value of SP
-                # M now holds the value
                 f"@{LCL_address}", # M is 200, A is 1
                 # set the D register to the value
                 "D=M", # D is 200
                 f"@{index}", # grab_range_value(local, 0) -> # M is 256, A is 0
-                "A=D+A", # A is (200 + 0)
+                # "A=D+A", # A is (200 + 0)
             ]
         case "argument":
             return [
-                # take 0, load it into the A register.
-                # M register will have the value at SP_address, which is the stack pointer
-                # Setting A=0, M=value of SP
-                # M now holds the value
                 f"@{ARG_address}",
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
-                "A=D+A",
             ]
         case "that":
             return [
@@ -101,7 +92,6 @@ def grab_range_value(segment: SegmentType, index: int):
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
-                "A=D+A",
             ]
         case "this":
             return [
@@ -113,21 +103,17 @@ def grab_range_value(segment: SegmentType, index: int):
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
-                "A=D+A",
             ]
         case "static":
             return [
                 f"@{STATIC_address}", # M is ??, A is 16
                 "D=A", # Be sure to get the value "16" instead of de-reffing what's at addr 16
-                f"@{index}",
-                "A=D+A",
-            ]
+                f"@{index}",            ]
         case "temp":
             return [
                 f"@{TEMP_address}", # M is ??, A is 5
                 "D=A", # Be sure to get the value "5" instead of de-reffing what's at addr 5
                 f"@{index}",
-                "A=D+A",
             ]
         case "pointer": # index will either be 0 (this) or 1 (that)
             if index == 0:
@@ -177,6 +163,7 @@ def constant_push(the_constant):
 
 def generic_push(segment: SegmentType, index: int):
     return grab_range_value(segment, index) + [
+        "A=D+A",
         "D=M",
         f"@{SP_address}",
         "A=M",
@@ -189,7 +176,8 @@ def generic_push(segment: SegmentType, index: int):
 def generic_pop(segment: SegmentType, index: int):
     return (
         grab_range_value(segment, index) + [
-            "A=@10000",
+            "D=D+A",
+            "@10000",
             "M=D",
         ]
         +
