@@ -420,11 +420,23 @@ def write_if(label_name):
     x = grab_value_off_stack()
     return x + [f"@{label_name}", "D;JNE"]
 
+def write_function(function_name, num_vars):
+    """Writes assembly code to handle the function command"""
+    instructions = write_label(function_name)
+    for _ in range(int(num_vars)):
+        instructions += constant_push(0)
+    return instructions
+
+#def write_return(...):
+#    """Writes assembly code to handle the return command
+#       IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
+#     """
+#    pass
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/Fibonacci/Fibonacci.vm"
-    OUTPUT_FILENAME = "fibonacci_output.asm"
+    INPUT_FILENAME = "test/vm/SimpleFunction/SimpleFunction.vm"
+    OUTPUT_FILENAME = "simple_function.asm"
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
@@ -486,6 +498,10 @@ def main():
             output += write_goto(split_line[1])
         if split_line[0] == "if-goto":
             output += write_if(split_line[1])
+        if split_line[0] == "function":
+            output += write_function(split_line[1], split_line[2])
+        #if split_line[0] == "return":
+        #    output += write_return(...) TODO TODO
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
