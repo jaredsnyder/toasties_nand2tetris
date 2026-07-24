@@ -116,7 +116,7 @@ def grab_range_value(segment: SegmentType, index: int):
                 # f"@{index}",
                 "D=0" # we have to do this for generic_pop, it kinda makes sense but we should refactor
                 ]
-    return 
+    return
 
 
 
@@ -165,8 +165,8 @@ def generic_push(segment: SegmentType, index: int):
 
 def generic_pop(segment: SegmentType, index: int):
     """
-    This current solution is shoddy as hell, we have to borrow some hopefully unused 
-    memory @10000 to store a fourth value because we need to add index and address but 
+    This current solution is shoddy as hell, we have to borrow some hopefully unused
+    memory @10000 to store a fourth value because we need to add index and address but
     we also need to hold the value of interest (to be saved at the index+address address)
     So this current is a lil dumb
 
@@ -175,7 +175,7 @@ def generic_pop(segment: SegmentType, index: int):
     If we can do this wo the D reg, then we wouldn't need a random memory spot to save this number
 
     Third option to consider:
-    maybe one of these other memory segments we haven't really used/learned yet can be 
+    maybe one of these other memory segments we haven't really used/learned yet can be
     the spiritual successor to @10000. Like temp and static, maybee that why it's called that
     temp?
 
@@ -194,8 +194,9 @@ def generic_pop(segment: SegmentType, index: int):
             "M=D"
         ]
 
-        # TODO: the 10000 is a placeholder random memory for extra space to store the 
+        # TODO: the 10000 is a placeholder random memory for extra space to store the
         # 4 number we needed to do generic pop for now, maybe there's a better place
+        # Idea: What about using TEMP memory segment for this?? Or R13, R14, R15 aren't used.
     )
 
 
@@ -427,11 +428,18 @@ def write_function(function_name, num_vars):
         instructions += constant_push(0)
     return instructions
 
-#def write_return(...):
-#    """Writes assembly code to handle the return command
-#       IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
-#     """
-#    pass
+def write_return():
+   """Writes assembly code to handle the return command
+      IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
+    """
+    # We need to find how to grab these values for the params
+    # These are going to be placed onto the stack by the call function
+    # The stack frame will be the same size for each function, with the
+    # LCL, ARG, THIS, THAT of the caller in the same, standard index each frame
+    # so segment is LCL, index -5 ... somehow
+    # See chart 8.5
+    # We could pop 5 times to consume the 5 values in the stack frame anmd get to return address
+    return [generic_pop("local", -5) + constant_push(return_value) + write_goto(functionName)]
 
 def main():
     output = []
@@ -500,8 +508,8 @@ def main():
             output += write_if(split_line[1])
         if split_line[0] == "function":
             output += write_function(split_line[1], split_line[2])
-        #if split_line[0] == "return":
-        #    output += write_return(...) TODO TODO
+        if split_line[0] == "return":
+            output += write_return()
 
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
