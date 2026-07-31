@@ -45,6 +45,9 @@ ARG_address = 2
 THIS_address = 3
 THAT_address = 4
 TEMP_address = 5 # 5 - 12
+FRAME_address = 13 # We made this up
+RETADDR_address = 14 # We also made this up
+POP_address = 15 # also some made up BS
 STATIC_address = 16 # 16 - 255
 
 SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "pointer"]
@@ -165,38 +168,22 @@ def generic_push(segment: SegmentType, index: int):
 
 def generic_pop(segment: SegmentType, index: int):
     """
-    This current solution is shoddy as hell, we have to borrow some hopefully unused
-    memory @10000 to store a fourth value because we need to add index and address but
-    we also need to hold the value of interest (to be saved at the index+address address)
-    So this current is a lil dumb
-
-    Jared Snyder also came up w an alternate solution, maybe shoddier
-    What if we create a for loop that does M=M+1 index times,
-    If we can do this wo the D reg, then we wouldn't need a random memory spot to save this number
-
-    Third option to consider:
-    maybe one of these other memory segments we haven't really used/learned yet can be
-    the spiritual successor to @10000. Like temp and static, maybee that why it's called that
-    temp?
-
+    We made up our own "pop" address in one of the unused mem locations (the spiritual
+    successor to storing it in 10,000). We're still not 100% sure this is right.
     """
     return (
         grab_range_value(segment, index) + [
             "D=D+A",
-            "@10000",
+            f"@{POP_address}",
             "M=D",
         ]
         +
         grab_value_off_stack() + # D has our value
         [
-            "@10000",
+            f"@{POP_address}",
             "A=M",
             "M=D"
         ]
-
-        # TODO: the 10000 is a placeholder random memory for extra space to store the
-        # 4 number we needed to do generic pop for now, maybe there's a better place
-        # Idea: What about using TEMP memory segment for this?? Or R13, R14, R15 aren't used.
     )
 
 
@@ -429,8 +416,8 @@ def write_function(function_name, num_vars):
     return instructions
 
 def write_return():
-   """Writes assembly code to handle the return command
-      IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
+    """Writes assembly code to handle the return command
+       IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
     """
     # We need to find how to grab these values for the params
     # These are going to be placed onto the stack by the call function
@@ -439,7 +426,82 @@ def write_return():
     # so segment is LCL, index -5 ... somehow
     # See chart 8.5
     # We could pop 5 times to consume the 5 values in the stack frame anmd get to return address
-    return [generic_pop("local", -5) + constant_push(return_value) + write_goto(functionName)]
+
+    # Write LCL to #FRAME_address
+    frame = grab_range_value("local", 0) + [
+        "D=D+A",
+        f"@{FRAME_address}",
+        "M=D",
+    ]
+
+    ret_addr = [
+        f"@{FRAME_address}",
+        "D=M",
+        "D=D-1",
+        "D=D-1",
+        "D=D-1",
+        "D=D-1",
+        "D=D-1",
+        f"@{RETADDR_address}",
+        "M=D",
+    ]
+
+    # !!!!
+    # TODO: If we write "call" first, this all might make a lot more sense. Essentially, calling a function sets ARG to SP-5-nArgs
+    # and sets LCL to SP.
+    # In returning, we essentially need to "solve for nArgs" by subtracting 5 from LCL to correct the SP. Possibly?
+    # !!!!
+
+    # According to the weird pseudocode on page 161:
+    return [
+        frame +
+        ret_addr +
+
+        generic_pop("local", 0) + # TODO: This looks wrong
+
+        [
+            # TODO: set SP to ARG + 1???
+        ] +
+
+        [
+            f"@{FRAME_address}",
+            "D=M",
+            "D=D-1",
+            f"@{THAT_address}",
+            "M=D",
+        ] +
+        [
+            f"@{FRAME_address}",
+            "D=M",
+            "D=D-1",
+            "D=D-1",
+            f"@{THIS_address}",
+            "M=D",
+        ] +
+        [
+            f"@{FRAME_address}",
+            "D=M",
+            "D=D-1",
+            "D=D-1",
+            "D=D-1",
+            f"@{ARG_address}",
+            "M=D",
+        ] +
+        [
+            f"@{FRAME_address}",
+            "D=M",
+            "D=D-1",
+            "D=D-1",
+            "D=D-1",
+            "D=D-1",
+            f"@{LCL_address}",
+            "M=D",
+        ] +
+
+        [
+            # TODO: `goto retAddr`
+        ]
+    ]
 
 def main():
     output = []
