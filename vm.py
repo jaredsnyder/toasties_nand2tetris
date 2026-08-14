@@ -408,6 +408,24 @@ def write_if(label_name):
     x = grab_value_off_stack()
     return x + [f"@{label_name}", "D;JNE"]
 
+# we came up with this concept of a global counter to keep track of which return address it should be 
+CALL_INVOCATION_X = 0
+def write_call(function_name, num_vars):
+    """Writes assembly code to handle the call command"""
+    CALL_INVOCATION_X += 1
+    return_address_label = f"@RETURN_ADDRESS_{CALL_INVOCATION_X}"
+    #TODO: the next step is pushing the value of the A register onto the stack not a regular push
+    # see slide 89, 39, and 
+    return # the push of the return address
+           # then push LCL
+           # then push ARG
+           # then PUSH THIS
+           # then PUSH THAT
+           # then ARG = SP-5-num_vars
+           # then LCL = SP
+           # goto f
+           # then write literally the return_address_label 
+
 def write_function(function_name, num_vars):
     """Writes assembly code to handle the function command"""
     instructions = write_label(function_name)
