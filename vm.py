@@ -35,6 +35,7 @@
 # branching control flow and function commands.
 
 from typing import Literal
+import pdb
 
 ## Initialization
 RAM = [0 for _ in range(16384)]
@@ -44,11 +45,11 @@ LCL_address = 1
 ARG_address = 2
 THIS_address = 3
 THAT_address = 4
-TEMP_address = 5 # 5 - 12
-FRAME_address = 13 # We made this up
-RETADDR_address = 14 # We also made this up
-POP_address = 15 # also some made up BS
-STATIC_address = 16 # 16 - 255
+TEMP_address = 5  # 5 - 12
+FRAME_address = 13  # We made this up
+RETADDR_address = 14  # We also made this up
+POP_address = 15  # also some made up BS
+STATIC_address = 16  # 16 - 255
 
 SegmentType = Literal["local", "argument", "this", "that", "static", "temp", "pointer"]
 
@@ -62,14 +63,15 @@ OPERATIONS_LUT = {
     "lt": "binary",
 }
 
+
 def grab_range_value(segment: SegmentType, index: int):
     match segment:
         case "local":
             return [
-                f"@{LCL_address}", # M is 200, A is 1
+                f"@{LCL_address}",  # M is 200, A is 1
                 # set the D register to the value
-                "D=M", # D is 200
-                f"@{index}", # grab_range_value(local, 0) -> # M is 256, A is 0
+                "D=M",  # D is 200
+                f"@{index}",  # grab_range_value(local, 0) -> # M is 256, A is 0
                 # "A=D+A", # A is (200 + 0)
             ]
         case "argument":
@@ -88,39 +90,39 @@ def grab_range_value(segment: SegmentType, index: int):
             ]
         case "this":
             return [
-                f"@{THIS_address}", # pop this 0 == save this number to THIS_ADDRESS + 0 (3000 + 0)
+                f"@{THIS_address}",  # pop this 0 == save this number to THIS_ADDRESS + 0 (3000 + 0)
                 # set the D register to the value
                 "D=M",
                 f"@{index}",
             ]
         case "static":
             return [
-                f"@{STATIC_address}", # M is ??, A is 16
-                "D=M", # Be sure to get the value "16" instead of de-reffing what's at addr 16
-                f"@{index}",            ]
-        case "temp":
-            return [
-                f"@{TEMP_address}", # M is ??, A is 5
-                "D=M", # Be sure to get the value "5" instead of de-reffing what's at addr 5
+                f"@{STATIC_address}",  # M is ??, A is 16
+                "D=M",  # Be sure to get the value "16" instead of de-reffing what's at addr 16
                 f"@{index}",
             ]
-        case "pointer": # index will either be 0 (this) or 1 (that)
+        case "temp":
+            return [
+                f"@{TEMP_address}",  # M is ??, A is 5
+                "D=M",  # Be sure to get the value "5" instead of de-reffing what's at addr 5
+                f"@{index}",
+            ]
+        case "pointer":  # index will either be 0 (this) or 1 (that)
             if index == 0:
                 return [
-                f"@{THIS_address}",
-                # set the D register to the value
-                "D=0" # we have to do this for generic_pop
+                    f"@{THIS_address}",
+                    # set the D register to the value
+                    "D=0",  # we have to do this for generic_pop
                 ]
             else:
                 return [
-                f"@{THAT_address}",
-                # set the D register to the value
-                # "D=M",
-                # f"@{index}",
-                "D=0" # we have to do this for generic_pop, it kinda makes sense but we should refactor
+                    f"@{THAT_address}",
+                    # set the D register to the value
+                    # "D=M",
+                    # f"@{index}",
+                    "D=0",  # we have to do this for generic_pop, it kinda makes sense but we should refactor
                 ]
     return
-
 
 
 def grab_value_off_stack():
@@ -154,6 +156,22 @@ def constant_push(the_constant):
     ]
 
 
+def address_value_push(address):
+    """
+    Takes in a the constant
+    Returns list of strings, the order of assembly instructions that does 'push'
+    """
+    return [
+        f"@{address}",
+        "D=M",
+        f"@{SP_address}",
+        "A=M",
+        "M=D",
+        f"@{SP_address}",
+        "M=M+1",
+    ]
+
+
 def generic_push(segment: SegmentType, index: int):
     return grab_range_value(segment, index) + [
         "A=D+A",
@@ -172,18 +190,14 @@ def generic_pop(segment: SegmentType, index: int):
     successor to storing it in 10,000). We're still not 100% sure this is right.
     """
     return (
-        grab_range_value(segment, index) + [
+        grab_range_value(segment, index)
+        + [
             "D=D+A",
             f"@{POP_address}",
             "M=D",
         ]
-        +
-        grab_value_off_stack() + # D has our value
-        [
-            f"@{POP_address}",
-            "A=M",
-            "M=D"
-        ]
+        + grab_value_off_stack()  # D has our value
+        + [f"@{POP_address}", "A=M", "M=D"]
     )
 
 
@@ -408,23 +422,43 @@ def write_if(label_name):
     x = grab_value_off_stack()
     return x + [f"@{label_name}", "D;JNE"]
 
-# we came up with this concept of a global counter to keep track of which return address it should be 
+
+def decrement_by_n(address, number_to_decrement_by):
+    """Decrements tha value at address by number_to_decrement_by"""
+    return [f"@{address}"] + ["M=M-1"] * number_to_decrement_by
+
+
+# we came up with this concept of a global counter to keep track of which return address it should be
 CALL_INVOCATION_X = 0
+
+
 def write_call(function_name, num_vars):
-    """Writes assembly code to handle the call command"""
+    """Writes assembly code to handle the call command
+
+    Reference slide 89, 39, and"""
+    global CALL_INVOCATION_X
     CALL_INVOCATION_X += 1
     return_address_label = f"@RETURN_ADDRESS_{CALL_INVOCATION_X}"
-    #TODO: the next step is pushing the value of the A register onto the stack not a regular push
-    # see slide 89, 39, and 
-    return # the push of the return address
-           # then push LCL
-           # then push ARG
-           # then PUSH THIS
-           # then PUSH THAT
-           # then ARG = SP-5-num_vars
-           # then LCL = SP
-           # goto f
-           # then write literally the return_address_label 
+    update_addresses = (
+        [
+            # put the return_address_label on the stack
+            return_address_label,
+            "D=A",
+            f"@{SP_address}",
+            "A=M",
+            "M=D",
+        ]
+        + address_value_push(LCL_address)
+        + address_value_push(ARG_address)
+        + address_value_push(THIS_address)
+        + address_value_push(THAT_address)
+        + decrement_by_n(ARG_address, 5 + num_vars),
+        [f"@{SP_address}", "D=M", f"@{LCL_address}", "M=D"]
+        + write_goto(function_name)
+        + write_label(return_address_label[1:]),
+    )
+    return update_addresses
+
 
 def write_function(function_name, num_vars):
     """Writes assembly code to handle the function command"""
@@ -433,9 +467,10 @@ def write_function(function_name, num_vars):
         instructions += constant_push(0)
     return instructions
 
+
 def write_return():
     """Writes assembly code to handle the return command
-       IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
+    IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
     """
     # We need to find how to grab these values for the params
     # These are going to be placed onto the stack by the call function
@@ -464,6 +499,14 @@ def write_return():
         "M=D",
     ]
 
+    # This is the part that handle the return values
+    # return value is at the top of the stack
+    # This puts the values at M at the ARG address
+    # *ARG = pop()
+    starg = [f"@{SP_address}", "A=M", "D=M", f"@{ARG_address}", "M=D"]
+
+    # SP = ARG+1
+    spupdate = ["D=A", f"@{SP_address}", "M=D"]
     # !!!!
     # TODO: If we write "call" first, this all might make a lot more sense. Essentially, calling a function sets ARG to SP-5-nArgs
     # and sets LCL to SP.
@@ -471,32 +514,27 @@ def write_return():
     # !!!!
 
     # According to the weird pseudocode on page 161:
-    return [
-        frame +
-        ret_addr +
-
-        generic_pop("local", 0) + # TODO: This looks wrong
-
-        [
-            # TODO: set SP to ARG + 1???
-        ] +
-
-        [
+    return (
+        frame
+        + ret_addr
+        + starg
+        + spupdate
+        + [
             f"@{FRAME_address}",
             "D=M",
             "D=D-1",
             f"@{THAT_address}",
             "M=D",
-        ] +
-        [
+        ]
+        + [
             f"@{FRAME_address}",
             "D=M",
             "D=D-1",
             "D=D-1",
             f"@{THIS_address}",
             "M=D",
-        ] +
-        [
+        ]
+        + [
             f"@{FRAME_address}",
             "D=M",
             "D=D-1",
@@ -504,8 +542,8 @@ def write_return():
             "D=D-1",
             f"@{ARG_address}",
             "M=D",
-        ] +
-        [
+        ]
+        + [
             f"@{FRAME_address}",
             "D=M",
             "D=D-1",
@@ -514,12 +552,10 @@ def write_return():
             "D=D-1",
             f"@{LCL_address}",
             "M=D",
-        ] +
-
-        [
-            # TODO: `goto retAddr`
         ]
-    ]
+        + [f"@{RETADDR_address}", "A=M"]
+    )
+
 
 def main():
     output = []
@@ -590,7 +626,6 @@ def main():
             output += write_function(split_line[1], split_line[2])
         if split_line[0] == "return":
             output += write_return()
-
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
         outfile.writelines(output_with_newlines)
