@@ -6,7 +6,7 @@
 // Performs a simple calculation and returns the result.
 // argument[0] and argument[1] must be set by the caller.
 
-function SimpleFunction.test 8
+function SimpleFunction.test 2
 	push local 0
 	push local 1
 	add

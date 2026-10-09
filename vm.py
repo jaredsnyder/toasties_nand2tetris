@@ -470,7 +470,7 @@ def write_function(function_name, num_vars):
 
 def write_return():
     """Writes assembly code to handle the return command
-    IMPLEMENT ME NEXT!!!!!!!!!!!! TODO TODO
+    WIP
     """
     # We need to find how to grab these values for the params
     # These are going to be placed onto the stack by the call function
@@ -503,7 +503,7 @@ def write_return():
     # return value is at the top of the stack
     # This puts the values at M at the ARG address
     # *ARG = pop()
-    starg = [f"@{SP_address}", "A=M", "D=M", f"@{ARG_address}", "M=D"]
+    starg = generic_pop("argument", 0)
 
     # SP = ARG+1
     spupdate = ["D=A", f"@{SP_address}", "M=D"]
