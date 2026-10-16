@@ -506,7 +506,7 @@ def write_return():
     starg = generic_pop("argument", 0)
 
     # SP = ARG+1
-    spupdate = ["D=A", f"@{SP_address}", "M=D"]
+    spupdate = ["D=A", f"@{SP_address}", "M=D+1"]
     # !!!!
     # TODO: If we write "call" first, this all might make a lot more sense. Essentially, calling a function sets ARG to SP-5-nArgs
     # and sets LCL to SP.
@@ -523,6 +523,8 @@ def write_return():
             f"@{FRAME_address}",
             "D=M",
             "D=D-1",
+            "A=D",
+            "D=M",
             f"@{THAT_address}",
             "M=D",
         ]
@@ -531,6 +533,8 @@ def write_return():
             "D=M",
             "D=D-1",
             "D=D-1",
+            "A=D",
+            "D=M",
             f"@{THIS_address}",
             "M=D",
         ]
@@ -540,6 +544,8 @@ def write_return():
             "D=D-1",
             "D=D-1",
             "D=D-1",
+            "A=D",
+            "D=M",
             f"@{ARG_address}",
             "M=D",
         ]
@@ -550,6 +556,8 @@ def write_return():
             "D=D-1",
             "D=D-1",
             "D=D-1",
+            "A=D",
+            "D=M",
             f"@{LCL_address}",
             "M=D",
         ]
