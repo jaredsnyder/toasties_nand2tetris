@@ -452,10 +452,10 @@ def write_call(function_name, num_vars):
         + address_value_push(ARG_address)
         + address_value_push(THIS_address)
         + address_value_push(THAT_address)
-        + decrement_by_n(ARG_address, 5 + num_vars),
-        [f"@{SP_address}", "D=M", f"@{LCL_address}", "M=D"]
+        + decrement_by_n(ARG_address, 5 + int(num_vars))
+        + [f"@{SP_address}", "D=M", f"@{LCL_address}", "M=D"]
         + write_goto(function_name)
-        + write_label(return_address_label[1:]),
+        + write_label(return_address_label[1:])
     )
     return update_addresses
 
@@ -567,8 +567,8 @@ def write_return():
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/SimpleFunction/SimpleFunction.vm"
-    OUTPUT_FILENAME = "simple_function.asm"
+    INPUT_FILENAME = "test/vm/NestedCall/Sys.vm"
+    OUTPUT_FILENAME = "nested_call.asm"
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
@@ -634,6 +634,8 @@ def main():
             output += write_function(split_line[1], split_line[2])
         if split_line[0] == "return":
             output += write_return()
+        if split_line[0] == "call":
+            output += write_call(split_line[1], split_line[2])
     output_with_newlines = [x + "\n" for x in output]
     with open(OUTPUT_FILENAME, "w") as outfile:
         outfile.writelines(output_with_newlines)
