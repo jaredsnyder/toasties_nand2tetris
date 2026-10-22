@@ -447,12 +447,22 @@ def write_call(function_name, num_vars):
             f"@{SP_address}",
             "A=M",
             "M=D",
+            f"@{SP_address}",
+            # increment so stack pointer is pointed at "blank" spot
+            "M=M+1",
         ]
         + address_value_push(LCL_address)
         + address_value_push(ARG_address)
         + address_value_push(THIS_address)
         + address_value_push(THAT_address)
+        + [
+            f"@{SP_address}",
+            "D=M",
+            f"@{ARG_address}",
+            "M=D"
+        ]
         + decrement_by_n(ARG_address, 5 + int(num_vars))
+        # write a fucntion that captures this and the above thing for ARG, they're the same
         + [f"@{SP_address}", "D=M", f"@{LCL_address}", "M=D"]
         + write_goto(function_name)
         + write_label(return_address_label[1:])
