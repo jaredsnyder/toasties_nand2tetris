@@ -539,6 +539,7 @@ D=M
 M=D
 @14
 A=M
+0;JMP
 //function Sys.add12 0
 
 (Sys.add12)
@@ -691,3 +692,4 @@ D=M
 M=D
 @14
 A=M
+0;JMP

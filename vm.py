@@ -455,12 +455,7 @@ def write_call(function_name, num_vars):
         + address_value_push(ARG_address)
         + address_value_push(THIS_address)
         + address_value_push(THAT_address)
-        + [
-            f"@{SP_address}",
-            "D=M",
-            f"@{ARG_address}",
-            "M=D"
-        ]
+        + [f"@{SP_address}", "D=M", f"@{ARG_address}", "M=D"]
         + decrement_by_n(ARG_address, 5 + int(num_vars))
         # write a fucntion that captures this and the above thing for ARG, they're the same
         + [f"@{SP_address}", "D=M", f"@{LCL_address}", "M=D"]
@@ -571,7 +566,13 @@ def write_return():
             f"@{LCL_address}",
             "M=D",
         ]
-        + [f"@{RETADDR_address}", "A=M"]
+        # TODO something is wrong with linking the (retraddr) LABLE
+        # to the line in the assembly code
+        # maybe it has something to do with the first pass of the
+        # assembler turning labels into numbers
+        # Maybe it something to do with how we "pop"
+        # This, that, arg, lcl?
+        + [f"@{RETADDR_address}", "A=M", "0;JMP"]
     )
 
 
