@@ -103,8 +103,9 @@ def grab_range_value(segment: SegmentType, index: int):
             ]
         case "temp":
             return [
+                # TODO: fix temp to be a parking space instead of an address logic. 
                 f"@{TEMP_address}",  # M is ??, A is 5
-                "D=M",  # Be sure to get the value "5" instead of de-reffing what's at addr 5
+                "D=A",  # Be sure to get the value "5" instead of de-reffing what's at addr 5
                 f"@{index}",
             ]
         case "pointer":  # index will either be 0 (this) or 1 (that)
@@ -512,11 +513,6 @@ def write_return():
 
     # SP = ARG+1
     spupdate = ["D=A", f"@{SP_address}", "M=D+1"]
-    # !!!!
-    # TODO: If we write "call" first, this all might make a lot more sense. Essentially, calling a function sets ARG to SP-5-nArgs
-    # and sets LCL to SP.
-    # In returning, we essentially need to "solve for nArgs" by subtracting 5 from LCL to correct the SP. Possibly?
-    # !!!!
 
     # According to the weird pseudocode on page 161:
     return (
@@ -572,7 +568,10 @@ def write_return():
         # assembler turning labels into numbers
         # Maybe it something to do with how we "pop"
         # This, that, arg, lcl?
-        + [f"@{RETADDR_address}", "A=M", "0;JMP"]
+        + [f"@{RETADDR_address}", 
+           "A=M", 
+           "A=M",
+           "0;JMP"]
     )
 
 

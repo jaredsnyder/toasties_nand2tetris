@@ -104,7 +104,7 @@ M=D
 //	pop temp 1
 
 @5
-D=M
+D=A
 @1
 D=D+A
 @15
@@ -346,7 +346,7 @@ M=D
 //	pop temp 0
 
 @5
-D=M
+D=A
 @0
 D=D+A
 @15
@@ -539,6 +539,7 @@ D=M
 M=D
 @14
 A=M
+A=M
 0;JMP
 //function Sys.add12 0
 
@@ -691,5 +692,6 @@ D=M
 @1
 M=D
 @14
+A=M
 A=M
 0;JMP
