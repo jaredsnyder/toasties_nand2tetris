@@ -103,7 +103,7 @@ def grab_range_value(segment: SegmentType, index: int):
             ]
         case "temp":
             return [
-                # TODO: fix temp to be a parking space instead of an address logic. 
+                # TODO: fix temp to be a parking space instead of an address logic.
                 f"@{TEMP_address}",  # M is ??, A is 5
                 "D=A",  # Be sure to get the value "5" instead of de-reffing what's at addr 5
                 f"@{index}",
@@ -509,7 +509,24 @@ def write_return():
     # return value is at the top of the stack
     # This puts the values at M at the ARG address
     # *ARG = pop()
-    starg = generic_pop("argument", 0)
+
+    starg = (
+        [
+            f"@{FRAME_address}",
+            "D=M",
+            "D=D-1",
+            "D=D-1",
+            "D=D-1",
+            "A=D",
+            "A=M",
+            "D=D+A",
+            f"@{POP_address}",
+            "M=D",
+        ]
+        + grab_value_off_stack()  # D has our value
+        + [f"@{POP_address}", "A=M", "M=D"]
+    )
+    # starg = generic_pop("argument", 0)
 
     # SP = ARG+1
     spupdate = ["D=A", f"@{SP_address}", "M=D+1"]
@@ -568,10 +585,7 @@ def write_return():
         # assembler turning labels into numbers
         # Maybe it something to do with how we "pop"
         # This, that, arg, lcl?
-        + [f"@{RETADDR_address}", 
-           "A=M", 
-           "A=M",
-           "0;JMP"]
+        + [f"@{RETADDR_address}", "A=M", "A=M", "0;JMP"]
     )
 
 
