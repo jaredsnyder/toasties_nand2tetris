@@ -103,13 +103,6 @@ M=D
 (RETURN_ADDRESS_1)
 //	pop temp 1
 
-// we should be jumping to ROM 89 at this point
-// but we're not
-// we think we're not handling local correctly
-// we can see that 89 value is in the RAM address 261
-// but we're instead jumping to ROM 296, the value stored in RAM 272 (the top of the stack when we made the jump, i think, if the top of the stack is stored at RAM 0...)
-// to keep debugging: the broken jump is at ROM 605, so we need to look at how the call frame is constructed for the calling function that ends at ROM 605 and see how it manages local
-
 @5
 D=A
 @1
@@ -494,10 +487,13 @@ D=D-1
 D=D-1
 @14
 M=D
-@2
+@13
 D=M
-@0
-D=D+A
+D=D-1
+D=D-1
+D=D-1
+A=D
+A=M
 @15
 M=D
 @0
@@ -648,10 +644,13 @@ D=D-1
 D=D-1
 @14
 M=D
-@2
+@13
 D=M
-@0
-D=D+A
+D=D-1
+D=D-1
+D=D-1
+A=D
+A=M
 @15
 M=D
 @0

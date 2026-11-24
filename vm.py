@@ -519,7 +519,7 @@ def write_return():
             "D=D-1",
             "A=D",
             "A=M",
-            "D=D+A",
+            # "D=D+A",
             f"@{POP_address}",
             "M=D",
         ]
