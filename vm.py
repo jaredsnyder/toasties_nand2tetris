@@ -322,12 +322,12 @@ def lt():
         "M=0",
         f"@LTEND_{LT_INVOCATION_COUNT}",
         "0;JMP",
-        f"(IS_LESS_THAN)_{LT_INVOCATION_COUNT}",
+        f"(IS_LESS_THAN_{LT_INVOCATION_COUNT})",
         f"@{SP_address}",
         "M=M-1",
         "A=M",
         "M=-1",
-        f"(LTEND)_{LT_INVOCATION_COUNT}",
+        f"(LTEND_{LT_INVOCATION_COUNT})",
     ]
 
     LT_INVOCATION_COUNT += 1
@@ -357,12 +357,12 @@ def gt():
         "M=0",
         f"@GTEND_{GT_INVOCATION_COUNT}",
         "0;JMP",
-        f"(IS_GREATER_THAN)_{GT_INVOCATION_COUNT}",
+        f"(IS_GREATER_THAN_{GT_INVOCATION_COUNT})",
         f"@{SP_address}",
         "M=M-1",
         "A=M",
         "M=-1",
-        f"(GTEND)_{GT_INVOCATION_COUNT}",
+        f"(GTEND_{GT_INVOCATION_COUNT})",
     ]
 
     GT_INVOCATION_COUNT += 1
