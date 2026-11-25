@@ -485,6 +485,8 @@ D=D-1
 D=D-1
 D=D-1
 D=D-1
+A=D
+D=M
 @14
 M=D
 @2
@@ -538,7 +540,6 @@ D=M
 @1
 M=D
 @14
-A=M
 A=M
 0;JMP
 //function Sys.add12 0
@@ -639,6 +640,8 @@ D=D-1
 D=D-1
 D=D-1
 D=D-1
+A=D
+D=M
 @14
 M=D
 @2
@@ -692,6 +695,5 @@ D=M
 @1
 M=D
 @14
-A=M
 A=M
 0;JMP
