@@ -36,6 +36,7 @@
 
 from typing import Literal
 import pdb
+import sys
 
 ## Initialization
 RAM = [0 for _ in range(16384)]
@@ -288,6 +289,9 @@ def eq():
     return sub() + not_operator()
 
 
+LT_INVOCATION_COUNT = 0
+
+
 def lt():
     """
     idea 1:
@@ -307,22 +311,31 @@ def lt():
     otherwise, set the result to false on the result part of the top of the stack
     set stack pointer to that place
     """
-    return sub() + [
-        "@IS_LESS_THAN",
+    global LT_INVOCATION_COUNT
+
+    output = sub() + [
+        f"@IS_LESS_THAN_{LT_INVOCATION_COUNT}",
         "D;JLT",
         f"@{SP_address}",
         "M=M-1",
         "A=M",
         "M=0",
-        "@END",
+        f"@LTEND_{LT_INVOCATION_COUNT}",
         "0;JMP",
-        "(IS_LESS_THAN)",
+        f"(IS_LESS_THAN)_{LT_INVOCATION_COUNT}",
         f"@{SP_address}",
         "M=M-1",
         "A=M",
         "M=-1",
-        "(END)",
+        f"(LTEND)_{LT_INVOCATION_COUNT}",
     ]
+
+    LT_INVOCATION_COUNT += 1
+
+    return output
+
+
+GT_INVOCATION_COUNT = 0
 
 
 def gt():
@@ -334,22 +347,27 @@ def gt():
     if difference is positive, return true
     !!! handle eq case too?
     """
-    return sub() + [
-        "@IS_GREATER_THAN",
+    global GT_INVOCATION_COUNT
+    output = sub() + [
+        f"@IS_GREATER_THAN_{GT_INVOCATION_COUNT}",
         "D;JGT",
         f"@{SP_address}",
         "M=M-1",
         "A=M",
         "M=0",
-        "@END",
+        f"@GTEND_{GT_INVOCATION_COUNT}",
         "0;JMP",
-        "(IS_GREATER_THAN)",
+        f"(IS_GREATER_THAN)_{GT_INVOCATION_COUNT}",
         f"@{SP_address}",
         "M=M-1",
         "A=M",
         "M=-1",
-        "(END)",
+        f"(GTEND)_{GT_INVOCATION_COUNT}",
     ]
+
+    GT_INVOCATION_COUNT += 1
+
+    return output
 
 
 def neg():
@@ -512,22 +530,6 @@ def write_return():
     # This puts the values at M at the ARG address
     # *ARG = pop()
 
-    # starg = (
-    #     [
-    #         f"@{FRAME_address}",
-    #         "D=M",
-    #         "D=D-1",
-    #         "D=D-1",
-    #         "D=D-1",
-    #         "A=D",
-    #         "A=M",
-    #         # "D=D+A",
-    #         f"@{POP_address}",
-    #         "M=D",
-    #     ]
-    #     + grab_value_off_stack()  # D has our value
-    #     + [f"@{POP_address}", "A=M", "M=D"]
-    # )
     starg = generic_pop("argument", 0)
 
     # SP = ARG+1
@@ -593,8 +595,11 @@ def write_return():
 
 def main():
     output = []
-    INPUT_FILENAME = "test/vm/NestedCall/Sys.vm"
-    OUTPUT_FILENAME = "nested_call.asm"
+    INPUT_FILENAME = sys.argv[1]
+    # "test/vm/FibonacciElementCombo/Sys.vm"
+    OUTPUT_FILENAME = sys.argv[2]
+
+    print(INPUT_FILENAME, OUTPUT_FILENAME)
 
     # Pass for user defined symbols
     for i, line in enumerate(open(INPUT_FILENAME).readlines()):
